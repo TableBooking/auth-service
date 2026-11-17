@@ -1,0 +1,57 @@
+name: tablebooking-auth
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: auth
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-auth_local_only}
+      POSTGRES_DB: auth_db
+    ports:
+      - '127.0.0.1:${POSTGRES_PORT:-5433}:5432'
+    volumes:
+      - auth-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U auth -d auth_db']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+  migrate:
+    profiles: [tools]
+    image: tablebooking-auth:local
+    build: .
+    command:
+      ['node', 'node_modules/typeorm/cli.js', 'migration:run', '-d', 'dist/config/data-source.js']
+    environment: &auth-environment
+      NODE_ENV: development
+      HOST: 0.0.0.0
+      PORT: 3001
+      DATABASE_URL: postgresql://auth:${POSTGRES_PASSWORD:-auth_local_only}@postgres:5432/auth_db
+      JWT_PRIVATE_KEY_PATH: /run/secrets/auth_private_key
+      JWT_ISSUER: restaurant-auth
+      JWT_AUDIENCE: restaurant-api
+      COOKIE_SECURE: 'false'
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8081
+    depends_on:
+      postgres:
+        condition: service_healthy
+  auth:
+    image: tablebooking-auth:local
+    build: .
+    environment: *auth-environment
+    ports:
+      - '127.0.0.1:3001:3001'
+    secrets:
+      - auth_private_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+    init: true
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+secrets:
+  auth_private_key:
+    file: ${JWT_PRIVATE_KEY_FILE:-./keys/auth-private.pem}
+volumes:
+  auth-data:

@@ -1,0 +1,49 @@
+{
+  "name": "tablebooking-auth-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch dist/main.js",
+    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "build": "node scripts/build.mjs",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "check": "tsc --noEmit && prettier --check .",
+    "format": "prettier --write .",
+    "migrate": "npm run migration:run",
+    "typeorm": "node --env-file-if-exists=.env node_modules/typeorm/cli.js",
+    "migration:show": "npm run build && npm run typeorm -- migration:show -d dist/config/data-source.js",
+    "migration:run": "npm run build && npm run typeorm -- migration:run -d dist/config/data-source.js",
+    "migration:revert": "npm run build && npm run typeorm -- migration:revert -d dist/config/data-source.js",
+    "migration:generate": "npm run build && node --env-file-if-exists=.env scripts/migration.mjs generate",
+    "migration:create": "node --env-file-if-exists=.env scripts/migration.mjs create",
+    "bootstrap:manager": "node --env-file-if-exists=.env dist/cli/bootstrap-manager.js",
+    "keys:generate": "node scripts/generate-keys.mjs",
+    "test": "tsc -p tsconfig.test.json && node --env-file-if-exists=.env --test --test-concurrency=1 .test-dist/test/*.test.js",
+    "test:gateway": "npm run smoke:gateway",
+    "smoke:gateway": "node --env-file-if-exists=.env scripts/smoke-gateway.mjs"
+  },
+  "dependencies": {
+    "@nestjs/common": "12.3.3",
+    "@nestjs/core": "12.3.3",
+    "@nestjs/platform-express": "12.3.3",
+    "express-rate-limit": "8.7.3",
+    "helmet": "8.3.0",
+    "jose": "6.2.15",
+    "pg": "^8.16.3",
+    "reflect-metadata": "0.2.2",
+    "rxjs": "7.8.2",
+    "typeorm": "^1.1.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "24.19.2",
+    "@types/pg": "^8.15.5",
+    "prettier": "^3.9.10",
+    "typescript": "6.0.3"
+  }
+}

@@ -1,0 +1,32 @@
+# Optional integration using an existing/published image, with no Gateway source checkout.
+services:
+  gateway:
+    image: ${GATEWAY_IMAGE:?Set GATEWAY_IMAGE to an existing local or registry image}
+    ports:
+      - '127.0.0.1:${GATEWAY_PORT:-8081}:8080'
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 8080
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8081
+      AUTH_SERVICE_URL: http://auth:3001
+      BOOKING_SERVICE_URL: http://host.docker.internal:3002
+      OPERATIONS_SERVICE_URL: http://host.docker.internal:3003
+      TRACKING_SERVICE_URL: http://host.docker.internal:3004
+      NOTIFICATION_SERVICE_URL: http://host.docker.internal:3005
+      JWT_PUBLIC_KEY_PATH: /run/secrets/auth_public_key
+      JWT_ISSUER: restaurant-auth
+      JWT_AUDIENCE: restaurant-api
+    secrets: [auth_public_key]
+    depends_on:
+      auth:
+        condition: service_healthy
+    init: true
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ['no-new-privileges:true']
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+secrets:
+  auth_public_key:
+    file: ${JWT_PUBLIC_KEY_FILE:-./keys/auth-public.pem}
